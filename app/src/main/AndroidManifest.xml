@@ -8,7 +8,7 @@
     <uses-feature android:name="android.hardware.sensor.gyroscope" android:required="false"/>
     <uses-feature android:name="android.hardware.location.gps" android:required="false"/>
     <uses-feature android:name="android.hardware.location" android:required="false"/>
-    <application android:label="Trilha dos Faróis" android:icon="@drawable/farol" android:allowBackup="false" android:theme="@android:style/Theme.Material.NoActionBar">
+    <application android:label="Trilha dos Faróis" android:icon="@drawable/farol" android:allowBackup="false" android:theme="@style/CoastalTheme">
         <activity android:name=".MainActivity" android:screenOrientation="sensorLandscape" android:exported="true">
             <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
         </activity>

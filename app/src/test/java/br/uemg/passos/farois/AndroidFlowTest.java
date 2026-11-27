@@ -109,8 +109,8 @@ public class AndroidFlowTest {
 
   @Test
   public void renderScenes() throws Exception {
-    CoverView cover = new CoverView(activity, null);
-    draw(cover, 640, 540, "capa");
+    View menu = activity.findViewById(R.id.port);
+    draw(menu, 960, 540, "capa");
     button("Iniciar expedição").performClick();
     GameView v = activity.view;
     v.active(false);
@@ -118,9 +118,19 @@ public class AndroidFlowTest {
     v.game.time = 5;
     v.game.x = 248;
     draw(v, 1080, 608, "enseada");
+    for (int i = 1; i < Stage.ALL.length; i++) {
+      Game g = new Game(i, 250, 3);
+      g.time = 5;
+      g.shield = 0;
+      g.x = 248;
+      draw(new GameView(activity, g), 720, 405, "fase_" + (i + 1));
+    }
   }
 
   private void draw(View v, int w, int h, String name) throws IOException {
+    v.measure(
+        View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY),
+        View.MeasureSpec.makeMeasureSpec(h, View.MeasureSpec.EXACTLY));
     v.layout(0, 0, w, h);
     Bitmap bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
     v.draw(new Canvas(bmp));

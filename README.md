@@ -6,6 +6,8 @@ Jogo de plataforma 2D para Android, desenvolvido em Java para a disciplina de Pr
 **Docente** — Eduardo Henrique Marques Ferreira  
 **Curso** — Sistemas de Informação, 6º período • UEMG, Unidade Passos • 2026/2
 
+![Menu da versão 1.1 com a casa do faroleiro e o porto](docs/menu.png)
+
 ![Primeira fase com moedas, controles de toque e cenário da Enseada Verde](docs/enseada.png)
 
 ## Jogar
@@ -79,7 +81,7 @@ O APK gerado fica em `app/build/outputs/apk/debug/app-debug.apk`. A primeira com
 
 | Arquivo | Responsabilidade |
 | --- | --- |
-| Stage.java | Mapas, cores, patrulhas e posições das bandeiras e faróis. |
+| Stage.java | Mapas, patrulhas e posições das bandeiras e faróis. |
 | Game.java | Física em passos fixos, colisões, vidas e regras de pontuação. Independente do Android. |
 | GameView.java | Loop de desenho, câmera lateral, multitoque, teclado e HUD. |
 | Scenery.java e CoverView.java | Cenários, sprites, animação do eco e ilustração da capa. |

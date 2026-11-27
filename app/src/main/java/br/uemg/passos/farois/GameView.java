@@ -7,7 +7,7 @@ import android.view.*;
 final class GameView extends View {
   final MainActivity host;
   final Game game;
-  final Scenery art = new Scenery();
+  final Scenery art;
   final SparseIntArray fingers = new SparseIntArray();
   boolean running, keyLeft, keyRight;
   private long last;
@@ -17,6 +17,7 @@ final class GameView extends View {
     super(host);
     this.host = host;
     this.game = game;
+    art = new Scenery(getResources(), game.index);
     setFocusableInTouchMode(true);
     requestFocus();
     setContentDescription("Trilha dos Faróis. Use as setas, pulo e eco.");
@@ -72,19 +73,14 @@ final class GameView extends View {
     c.scale(scale, scale);
     c.clipRect(0, 0, 720, 405);
     art.world(c, game, camera, host.rain());
-    art.box(c, 12, 10, 235, 43, 9, 0xed18353c);
+    art.rect(c, 12, 10, 166, 44, 0xdf383e34);
+    art.rect(c, 12, 10, 3, 44, 0xffd9ad68);
     art.label(
-        c, (game.index + 1) + " / 6   " + game.stage.name, 22, 27, 12, Scenery.CREAM, Scenery.BOLD);
-    art.label(
-        c,
-        "VIDAS  " + game.lives + "     •     " + game.score + " PTS",
-        22,
-        44,
-        11,
-        Scenery.GOLD,
-        Scenery.BOLD);
-    art.box(c, 263, 21, 190, 5, 2, 0x700d3037);
-    art.box(c, 263, 21, 190 * game.x / game.stage.goal, 5, 2, Scenery.GOLD);
+        c, (game.index + 1) + " / 6   " + game.stage.name, 22, 27, 13, Scenery.CREAM, Scenery.BOLD);
+    for (int i = 0; i < 3; i++) heart(c, 22 + i * 14, 35, i < game.lives);
+    art.label(c, game.score + " pts", 76, 44, 12, Scenery.GOLD, Scenery.BOLD);
+    art.rect(c, 12, 55, 166, 2, 0x66515946);
+    art.rect(c, 12, 55, 166 * game.x / game.stage.goal, 2, 0xffac823e);
     button(c, 658, 8, 50, 42, "Ⅱ", false);
     if (game.time < 4 || flagTime > game.time) {
       String msg = flagTime > game.time ? "Bandeira ativada" : game.stage.hint;
@@ -112,8 +108,20 @@ final class GameView extends View {
     } else if (running) postInvalidateOnAnimation();
   }
 
+  private void heart(Canvas c, int x, int y, boolean full) {
+    int color = full ? 0xffe59a72 : 0xff767b6a;
+    art.rect(c, x + 1, y, 3, 2, color);
+    art.rect(c, x + 6, y, 3, 2, color);
+    art.rect(c, x, y + 2, 10, 3, color);
+    art.rect(c, x + 2, y + 5, 6, 2, color);
+    art.rect(c, x + 4, y + 7, 2, 2, color);
+  }
+
   private void button(Canvas c, int x, int y, int w, int h, String text, boolean on) {
-    art.box(c, x, y, w, h, 10, on ? 0xeeb57450 : 0xdf17343c);
+    boolean jump = x == 621;
+    art.box(c, x, y + 2, w, h, 5, 0xa5262b27);
+    art.box(c, x, y, w, h - 2, 5, 0xbbc3b995);
+    art.box(c, x + 1, y + 1, w - 2, h - 4, 4, on ? 0xe98b6649 : jump ? 0xe388533c : 0xcb3e483c);
     art.p.setTextSize(16);
     art.p.setTypeface(Scenery.BOLD);
     art.label(

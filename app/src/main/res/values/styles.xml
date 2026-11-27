@@ -1,0 +1,12 @@
+<resources>
+    <style name="CoastalTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:colorAccent">#854B36</item>
+        <item name="android:windowBackground">#F0E5CA</item>
+        <item name="android:alertDialogTheme">@style/CoastalDialog</item>
+    </style>
+    <style name="CoastalDialog" parent="@android:style/Theme.Material.Light.Dialog.Alert">
+        <item name="android:colorAccent">#854B36</item>
+        <item name="android:colorBackgroundFloating">#F0E5CA</item>
+        <item name="android:textColorPrimary">#363D32</item>
+    </style>
+</resources>

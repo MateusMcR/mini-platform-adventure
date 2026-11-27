@@ -1,10 +1,15 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="match_parent"
-    android:orientation="horizontal" android:background="#142D36">
-    <br.uemg.passos.farois.CoverView android:layout_width="0dp" android:layout_height="match_parent"
-        android:layout_weight="1.15" android:contentDescription="Trilha dos Faróis. Uma aventura em seis ilhas."/>
-    <ScrollView android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:fillViewport="true">
-        <LinearLayout android:id="@+id/actions" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:orientation="vertical" android:gravity="center_vertical" android:padding="18dp"/>
-    </ScrollView>
-</LinearLayout>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/port" android:layout_width="match_parent" android:layout_height="match_parent">
+    <br.uemg.passos.farois.CoverView android:layout_width="match_parent" android:layout_height="match_parent"
+        android:importantForAccessibility="no"/>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="horizontal">
+        <ScrollView android:layout_width="0dp" android:layout_weight="0.36" android:layout_height="match_parent"
+            android:background="#F0E5CA" android:fillViewport="true" android:scrollbars="vertical">
+            <LinearLayout android:id="@+id/actions" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:gravity="center_vertical" 
+                android:paddingLeft="18dp" android:paddingRight="18dp" android:paddingTop="10dp" android:paddingBottom="10dp"/>
+        </ScrollView>
+        <View android:layout_width="2dp" android:layout_height="match_parent" android:background="#8C7958"/>
+        <Space android:layout_width="0dp" android:layout_weight="0.64" android:layout_height="1dp"/>
+    </LinearLayout>
+</FrameLayout>

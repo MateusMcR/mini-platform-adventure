@@ -110,12 +110,18 @@ public final class MainActivity extends Activity {
     fieldKit = tools;
     setContentView(R.layout.camp);
     panel = findViewById(R.id.actions);
+    if (tools) {
+      ScrollView sheet = (ScrollView) panel.getParent();
+      LinearLayout.LayoutParams size = (LinearLayout.LayoutParams) sheet.getLayoutParams();
+      size.weight = .64f;
+      sheet.setLayoutParams(size);
+    }
   }
 
   private void text(String value, int sp, int color, boolean title) {
     TextView t = new TextView(this);
     t.setText(value);
-    t.setTextColor(color);
+    t.setTextColor(color == Scenery.GOLD ? 0xff794b31 : 0xff363d32);
     t.setTextSize(sp);
     t.setTypeface(title ? Scenery.TITLE : Scenery.BOLD);
     t.setPadding(0, dp(2), 0, dp(5));
@@ -127,28 +133,62 @@ public final class MainActivity extends Activity {
     b.setText(label);
     b.setAllCaps(false);
     b.setTextSize(15);
+    b.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+    b.setStateListAnimator(null);
     b.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
     b.setPadding(dp(14), 0, dp(10), 0);
-    b.setTextColor(primary ? Scenery.INK : Scenery.CREAM);
+    b.setTextColor(primary ? 0xfffff2d8 : 0xff373d33);
     GradientDrawable shape = new GradientDrawable();
-    shape.setCornerRadius(dp(9));
-    shape.setColor(primary ? Scenery.GOLD : 0xff25454d);
+    shape.setCornerRadius(dp(2));
+    shape.setColor(primary ? 0xff854b36 : fieldKit ? 0xffe8dabc : 0xfff0e5ca);
+    if (primary || fieldKit) shape.setStroke(dp(1), primary ? 0xff69402f : 0xffc0af8c);
+    if (!fieldKit) {
+      int icon =
+          primary
+              ? R.drawable.ic_play
+              : label.equals("Como jogar")
+                  ? R.drawable.ic_game
+                  : label.equals("Ranking local")
+                      ? R.drawable.ic_flag
+                      : label.equals("Caderno de campo") ? R.drawable.ic_book : 0;
+      b.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, 0, 0, 0);
+      b.setCompoundDrawablePadding(dp(9));
+    }
     b.setBackground(
         new android.graphics.drawable.RippleDrawable(
             android.content.res.ColorStateList.valueOf(0x5574baac), shape, null));
     b.setOnClickListener(v -> action.run());
-    LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, dp(46));
+    LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, dp(48));
     lp.bottomMargin = dp(5);
     panel.addView(b, lp);
+    if (!fieldKit && !primary) {
+      View rule = new View(this);
+      rule.setBackgroundColor(0xffcfbea0);
+      panel.addView(rule, new LinearLayout.LayoutParams(-1, dp(1)));
+    }
   }
 
   private void camp() {
     screen(false);
     Game save = store.load();
-    text("Acampamento", 25, Scenery.CREAM, true);
-    if (save == null)
-      text("Acenda os seis faróis antes que acabem suas vidas.", 14, 0xffbed1c9, false);
-    else
+    TextView prefix = new TextView(this);
+    prefix.setText("Trilha dos");
+    prefix.setTextColor(0xff454834);
+    prefix.setTextSize(25);
+    prefix.setTypeface(Typeface.create("serif", Typeface.ITALIC));
+    prefix.setIncludeFontPadding(false);
+    panel.addView(prefix);
+    ImageView logo = new ImageView(this);
+    logo.setContentDescription("Faróis");
+    android.graphics.drawable.BitmapDrawable lettering =
+        (android.graphics.drawable.BitmapDrawable) getDrawable(R.drawable.titulo_farois);
+    lettering.setFilterBitmap(false);
+    logo.setImageDrawable(lettering);
+    logo.setScaleType(ImageView.ScaleType.FIT_START);
+    LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, dp(49));
+    lp.bottomMargin = dp(12);
+    panel.addView(logo, lp);
+    if (save != null)
       text(
           "Fase " + (save.index + 1) + " • " + save.stage.name + " • " + save.score + " pts",
           14,

@@ -6,7 +6,7 @@ import android.view.*;
 
 /** Cada nó pertence à mesma carta ilustrada. Toque ou setas selecionam o porto. */
 final class SeaChart extends View {
-  private static final int[] X = {46, 115, 81, 183, 223, 304}, Y = {157, 115, 55, 53, 132, 79};
+  private static final int[] X = {46, 115, 81, 183, 223, 304, 289}, Y = {157, 115, 55, 53, 132, 79, 143};
   private final Bitmap chart, traveler;
   private final Paint p = new Paint();
   private final RectF bounds = new RectF(), dest = new RectF();
@@ -58,6 +58,7 @@ final class SeaChart extends View {
     p.setColor(-1);
     p.setFilterBitmap(false);
     c.drawBitmap(chart, null, bounds, p);
+    p.setColor(0xff596c63);c.drawOval(271,136,310,153,p);p.setColor(0xffb69f78);c.drawOval(273,134,307,148,p);
     for (int i = 1; i < X.length; i++) {
       int dx = X[i] - X[i - 1], dy = Y[i] - Y[i - 1];
       int dots = (int) Math.hypot(dx, dy) / 5;

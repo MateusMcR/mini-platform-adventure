@@ -23,6 +23,18 @@ public final class MainActivity extends Activity {
   private boolean fieldKit, foreground;
   private AlertDialog overlay;
   SeaChart chart;
+  Cinematic film;
+  private void showFilm(boolean ending,float seconds){
+    screen(false);
+    film=new Cinematic(this,ending,seconds);
+    setContentView(film);film.requestFocus();film.active(foreground);
+  }
+  void afterFilm(Cinematic source){
+    if(source!=film || isFinishing() || isDestroyed())return;
+    film=null;
+    Game save=store.load();
+    openChart(source.ending?Stage.BONUS:save==null?0:save.index);
+  }
   private boolean replay;
   private MediaPlayer music;
   private static final int[] THEMES = {
@@ -48,7 +60,8 @@ public final class MainActivity extends Activity {
     int[] events = {Game.COIN, Game.LEAP, Game.ECHO, Game.HIT, Game.FLAG, Game.STOMP};
     int[] files = {R.raw.moeda, R.raw.pulo, R.raw.eco, R.raw.queda, R.raw.farol, R.raw.guarda};
     for (int i = 0; i < events.length; i++) clips.put(events[i], sounds.load(this, files[i], 1));
-    if (state != null && state.getBoolean("kit")) kit();
+    if(state!=null && state.containsKey("film"))showFilm(state.getBoolean("film"),state.getFloat("seconds"));
+    else if (state != null && state.getBoolean("kit")) kit();
     else if (state != null && state.containsKey("island")) openChart(state.getInt("island"));
     else camp();
   }
@@ -75,6 +88,7 @@ public final class MainActivity extends Activity {
   protected void onSaveInstanceState(Bundle b) {
     super.onSaveInstanceState(b);
     b.putBoolean("kit", fieldKit);
+    if(film!=null){b.putBoolean("film",film.ending);b.putFloat("seconds",film.position());}
     if (chart != null) b.putInt("island", chart.selected);
   }
 
@@ -110,6 +124,7 @@ public final class MainActivity extends Activity {
   }
 
   private void screen(boolean tools) {
+    if(film!=null){film.active(false);film=null;}
     chart = null;
     releaseMusic();
     if (view != null) view.active(false);
@@ -207,7 +222,7 @@ public final class MainActivity extends Activity {
     button(save == null ? "Iniciar expedição" : "Continuar expedição", true, this::embark);
     button("Caderno de campo", false, this::kit);
     button("Como jogar", false, this::help);
-    button("Diário de Lia", false, () -> message("A concha do Aurora", Voyage.PROLOGUE));
+    button("Diário de Lia", false, () -> showFilm(false,0));
     button("Ranking local", false, () -> message("Ranking da expedição", store.ranking()));
     if (save != null)
       button(
@@ -222,7 +237,7 @@ public final class MainActivity extends Activity {
                       "Recomeçar",
                       (d, w) -> {
                         store.save(new Game(0, 0, 3));
-                        openChart(0);
+                        showFilm(false,0);
                       })
                   .show());
   }
@@ -354,14 +369,14 @@ public final class MainActivity extends Activity {
       save = new Game(0, 0, 3);
       store.save(save);
     }
-    openChart(save.index);
     if (!prefs.getBoolean("prologue", false)) {
       prefs.edit().putBoolean("prologue", true).apply();
-      message("A concha do Aurora", Voyage.PROLOGUE);
-    }
+      showFilm(false,0);
+    }else openChart(save.index);
   }
 
   private int unlocked(Game save) {
+    if(prefs.getBoolean("bonusUnlocked",false) || store.wonCampaign())return Stage.BONUS;
     return Math.max(
         store.historicalIsland(),
         Math.max(save == null ? 0 : save.index, prefs.getInt("openIsland", 0)));
@@ -373,7 +388,7 @@ public final class MainActivity extends Activity {
     int open = unlocked(save);
     LinearLayout layout = new LinearLayout(this);
     layout.setBackgroundColor(0xfff0e5ca);
-    chart = new SeaChart(this, open, Math.max(0, Math.min(5, selected)));
+    chart = new SeaChart(this, open, Math.max(0, Math.min(Stage.BONUS, selected)));
     layout.addView(chart, new LinearLayout.LayoutParams(0, -1, 1.8f));
     ScrollView sheet = new ScrollView(this);
     sheet.setFillViewport(true);
@@ -394,11 +409,11 @@ public final class MainActivity extends Activity {
     Game save = store.load();
     int n = chart.selected, open = unlocked(save);
     text("Carta do arquipélago", 19, Scenery.INK, true);
-    text((n + 1) + " / 6   " + Stage.ALL[n].name, 16, Scenery.GOLD, false);
+    text((n==Stage.BONUS?"Bônus   ":(n+1)+" / 6   ")+Stage.ALL[n].name, 16, Scenery.GOLD, false);
     if (n <= open) {
-      text(Voyage.CHAPTER[n], 14, Scenery.INK, false);
+      text(n==Stage.BONUS?"O casco do Aurora trouxe uma escama. Na maré baixa, a sentinela desperta sob o santuário.":Voyage.CHAPTER[n], 14, Scenery.INK, false);
       boolean current = save != null && n == save.index;
-      button(current ? "Entrar na fase" : "Revisitar ilha", true, this::enterIsland);
+      button(n==Stage.BONUS?"Enfrentar a sentinela":current ? "Entrar na fase" : "Revisitar ilha", true, this::enterIsland);
       if (!current) text("Visita livre · 3 vidas", 12, Scenery.GOLD, false);
     } else
       text(
@@ -411,7 +426,7 @@ public final class MainActivity extends Activity {
       Button b = new Button(this);
       b.setText(d < 0 ? "◀" : "▶");
       b.setContentDescription(d < 0 ? "Ilha anterior" : "Ilha seguinte");
-      b.setEnabled(n + d >= 0 && n + d < 6);
+      b.setEnabled(n + d >= 0 && n+d<Stage.ALL.length);
       b.setOnClickListener(v -> chart.select(n + d));
       nav.addView(b, new LinearLayout.LayoutParams(0, dp(48), 1));
     }
@@ -446,7 +461,7 @@ public final class MainActivity extends Activity {
   private void playMusic() {
     if (!option("music")) return;
     if (music == null) {
-      music = MediaPlayer.create(this, THEMES[view.game.index]);
+      music = MediaPlayer.create(this, THEMES[view.game.index==Stage.BONUS?4:view.game.index]);
       if (music != null) {
         music.setVolume(.37f, .37f);
         music.setLooping(true);
@@ -513,7 +528,7 @@ public final class MainActivity extends Activity {
     if (replay) {
       overlay =
           new AlertDialog.Builder(this)
-              .setTitle(g.status == Game.CLEAR ? "Ilha revisitada" : "Fim da visita")
+              .setTitle(g.status == Game.CLEAR ? (g.index==Stage.BONUS?"Sentinela da Ressaca vencida!":"Ilha revisitada") : "Fim da visita")
               .setMessage(g.score + " pontos nesta visita.")
               .setCancelable(false)
               .setPositiveButton(
@@ -525,12 +540,13 @@ public final class MainActivity extends Activity {
               .show();
       return;
     }
-    boolean clear = g.status == Game.CLEAR, more = clear && g.index + 1 < Stage.ALL.length;
+    boolean clear = g.status == Game.CLEAR, more = clear && g.index + 1 < Stage.BONUS;
     Game next = more ? new Game(g.index + 1, g.score, g.lives) : null;
     if (clear)
       prefs.edit().putInt("openIsland", Math.max(unlocked(g), Math.min(5, g.index + 1))).apply();
     if (more) store.save(next);
     else store.finish(g);
+    if(clear && !more){prefs.edit().putBoolean("bonusUnlocked",true).apply();showFilm(true,0);return;}
     String title =
         more ? "Farol aceso!" : clear ? "Os seis faróis estão acesos!" : "Fim da expedição";
     String body =
@@ -562,14 +578,15 @@ public final class MainActivity extends Activity {
 
   @Override
   public void onBackPressed() {
-    if (view != null) pauseGame();
+    if(film!=null)film.finish();
+    else if (view != null) pauseGame();
     else if (fieldKit || chart != null) camp();
     else super.onBackPressed();
   }
 
   @Override
   protected void onPause() {
-    foreground = false;
+    foreground = false;if(film!=null)film.active(false);
     pauseMusic();
     if (view != null) {
       view.active(false);
@@ -583,7 +600,7 @@ public final class MainActivity extends Activity {
   @Override
   protected void onResume() {
     super.onResume();
-    foreground = true;
+    foreground = true;if(film!=null)film.active(true);
     if (view != null && overlay == null) pauseGame();
   }
 

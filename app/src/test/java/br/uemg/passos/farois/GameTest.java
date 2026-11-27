@@ -8,11 +8,12 @@ public class GameTest {
   @Test
   public void allSixMapsCanBeCrossedUsingOnlyPlayerInputs() {
     int score = 0, lives = 3;
-    for (int level = 0; level < Stage.ALL.length; level++) {
+    for (int level = 0; level < Stage.BONUS; level++) {
       Game g = new Game(level, score, lives);
       boolean crossingTrap = false;
       for (int tick = 0; tick < 16000 && g.status == Game.RUN; tick++) {
         Stage s = g.stage;
+        if(g.swimming() && g.y>=309 && g.velocityY>=0)g.jump();
         if (g.grounded) crossingTrap = false;
         if (g.grounded && g.x < g.trapX() && g.trapX() - g.x < 50) {
           g.jump();
@@ -41,6 +42,25 @@ public class GameTest {
     }
   }
 
+  @Test public void strokeClimbAndDrop(){
+    Game g=new Game(2,0,3);Stage s=g.stage;
+    g.x=s.waterStart()+90;g.y=357;g.grounded=false;g.jump();g.step(1);
+    assertTrue(g.y<357 && g.velocityY<0);
+    g.x=s.trunk();g.y=s.top[s.grove];g.jump();
+    for(int i=0;i<180;i++)g.step(0);
+    assertEquals(s.canopy(),g.y,.1);assertTrue(g.coins[s.grove]);
+    for(int i=0;i<40;i++)g.step(-1);
+    assertTrue(g.y>s.canopy());
+  }
+
+  @Test public void guardianRequiresThreeSeparateOpenings(){
+    Game g=new Game(Stage.BONUS,0,3);
+    g.x=g.bossX()-90;g.y=g.stage.top[g.stage.grove+1];
+    g.echo();assertEquals(3,g.bossLife);
+    for(int i=0;i<3;i++){g.bossTime=2.7f;g.echoCooldown=0;g.struck=false;g.echo();
+      g.echoCooldown=0;g.echo();assertEquals(2-i,g.bossLife);}
+    g.x=g.stage.goal;g.step(0);assertEquals(Game.CLEAR,g.status);
+  }
   @Test
   public void trapConsumesOneLifeAndBirdAndFrogLeaveGround() {
     Game g = new Game(3, 0, 3);

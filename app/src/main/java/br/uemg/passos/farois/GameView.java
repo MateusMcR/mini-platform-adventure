@@ -76,7 +76,7 @@ final class GameView extends View {
     art.rect(c, 12, 10, 166, 44, 0xdf383e34);
     art.rect(c, 12, 10, 3, 44, 0xffd9ad68);
     art.label(
-        c, (game.index + 1) + " / 6   " + game.stage.name, 22, 27, 13, Scenery.CREAM, Scenery.BOLD);
+        c, (game.index==Stage.BONUS?"Bônus   ":(game.index+1)+" / 6   ")+game.stage.name, 22, 27, 13, Scenery.CREAM, Scenery.BOLD);
     for (int i = 0; i < 3; i++) heart(c, 22 + i * 14, 35, i < game.lives);
     art.label(c, game.score + " pts", 76, 44, 12, Scenery.GOLD, Scenery.BOLD);
     art.rect(c, 12, 55, 166, 2, 0x66515946);
@@ -100,7 +100,7 @@ final class GameView extends View {
         51,
         game.echoCooldown > 0 ? String.valueOf((int) Math.ceil(game.echoCooldown)) : "ECO",
         game.echoCooldown > 0);
-    button(c, 621, 337, 84, 58, "PULO", !game.grounded);
+    button(c, 621, 337, 84, 58, game.swimming()?"NADAR":game.atTree()?"SUBIR":"PULO", !game.grounded);
     c.restore();
     if (running && game.status != Game.RUN) {
       running = false;

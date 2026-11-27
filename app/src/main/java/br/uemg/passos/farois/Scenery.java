@@ -31,8 +31,8 @@ final class Scenery {
   private final RectF dest = new RectF();
 
   Scenery(android.content.res.Resources res, int stage) {
-    sky = BitmapFactory.decodeResource(res, SKY[stage]);
-    soil = BitmapFactory.decodeResource(res, GROUND[stage]);
+    sky = BitmapFactory.decodeResource(res, SKY[Math.min(5, stage)]);
+    soil = BitmapFactory.decodeResource(res, GROUND[Math.min(5, stage)]);
     landmarks = BitmapFactory.decodeResource(res, R.drawable.marcos);
     tower = BitmapFactory.decodeResource(res, R.drawable.torre);
     hero = BitmapFactory.decodeResource(res, R.drawable.viajante);
@@ -173,6 +173,48 @@ final class Scenery {
     }
   }
 
+  private void tidalGarden(Canvas c,Game g){
+    Stage s=g.stage;
+    float x=s.waterStart(),w=s.waterEnd()-x;
+    rect(c,x,323,w,82,0xed477c79);
+    for(int i=0;i<w;i+=16){
+      float surface=322+2*(float)Math.sin(g.time*2+i*.12);
+      rect(c,x+i,surface,16,3,0xffacd3bd);
+      rect(c,x+i+4,surface+17,5,1,0xff739d92);
+      if(i%32==0)rect(c,x+i+6,368-(i%5)*3,2,3,0xff97c2b1);
+    }
+    int tree=s.trunk(),top=s.canopy();
+    rect(c,tree-8,top+5,16,102,0xff6d5841);
+    for(int i=12;i<102;i+=15)rect(c,tree-12,top+i,22,3,0xffb09669);
+    for(int i=-2;i<=2;i++){
+      float h=top-9+Math.abs(i)*3;
+      box(c,tree+i*20-18,h-15,37,25,7,0xff506e51);
+      box(c,tree+i*20-15,h-17,29,9,5,0xff8fa172);
+    }
+    rect(c,tree-60,top,120,5,0xff655a42);
+    rect(c,tree-59,top,118,2,0xffc1b277);
+  }
+
+  private void leviathan(Canvas c,Game g){
+    float x=g.bossX(),y=g.stage.top[g.stage.grove+1];
+    int shell=g.vulnerable()?0xff72998c:0xff505e67;
+    for(int i=-2;i<=2;i++){
+      float twitch=(float)Math.sin(g.bossTime*4+i)*4;
+      box(c,x+i*14-7,y-14,14,12+twitch,4,0xff485460);
+    }
+    box(c,x-35,y-49,70,39,11,shell);
+    for(int i=-2;i<=2;i++)tri(c,x+i*13-7,y-45,x+i*13,y-61,x+i*13+6,y-44,0xff938c73);
+    disc(c,x-19,y-34,5,Scenery.CREAM);disc(c,x-21,y-34,2,INK);
+    disc(c,x+4,y-36,g.vulnerable()?9:5,g.vulnerable()?GOLD:0xffaa9a82);
+    if(!g.fighting())return;
+    if(g.cycle()<1)rect(c,x-35,y-4,35*g.cycle(),3,GOLD);
+    if(g.cycle()>=1 && g.cycle()<3.3f){
+      float wave=g.waveX();tri(c,wave-13,y,wave+4,y-24,wave+14,y,0xff63a4a2);
+      rect(c,wave-1,y-23,7,3,CREAM);
+    }
+    for(int i=0;i<3;i++)rect(c,x-23+16*i,y-72,13,4,i<g.bossLife?GOLD:INK);
+  }
+
   void world(Canvas c, Game g, float camera, boolean rainy) {
     Stage s = g.stage;
     background(c, g, camera, rainy);
@@ -184,7 +226,7 @@ final class Scenery {
         image(
             c,
             landmarks,
-            g.index * 48,
+            Math.min(g.index,5) * 48,
             (i % 3) * 40,
             48,
             40,
@@ -201,6 +243,8 @@ final class Scenery {
         rect(c, x - 1, y - 5, 2, 9, 0xfffae3a1);
       }
     }
+    tidalGarden(c,g);
+    if(g.index==Stage.BONUS && g.bossLife>0)leviathan(c,g);
     obstacle(c, g);
     int flag = s.checkpoint;
     float fx = s.left[flag] + 28, fy = s.top[flag];

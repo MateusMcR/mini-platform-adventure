@@ -9,7 +9,7 @@ final class Game {
   static final int COIN = 1, HIT = 2, FLAG = 4, STOMP = 8, ECHO = 16, LEAP = 32;
   final Stage stage;
   final int index;
-  final float[] enemyX, stun;
+  final float[] enemyX, enemyY, stun;
   final boolean[] dead, coins;
   float x, y, velocityY, time, grace, jumpBuffer, shield, echoCooldown;
   int score, lives, status, events, facing = 1;
@@ -21,10 +21,12 @@ final class Game {
     this.lives = lives;
     stage = Stage.ALL[index];
     enemyX = new float[stage.guards.length];
+    enemyY = new float[enemyX.length];
     stun = new float[enemyX.length];
     dead = new boolean[enemyX.length];
     coins = new boolean[stage.left.length];
     respawn();
+    shield = 0;
     moveGuards(0);
   }
 
@@ -44,11 +46,10 @@ final class Game {
 
   void echo() {
     if (status != RUN || echoCooldown > 0) return;
-    echoCooldown = 2.6f;
+    echoCooldown = 1.8f;
     events |= ECHO;
     for (int i = 0; i < enemyX.length; i++)
-      if (Math.abs(x - enemyX[i]) <= 150 && Math.abs(y - stage.top[stage.guards[i]]) < 90)
-        stun[i] = 2;
+      if (Math.abs(x - enemyX[i]) <= 150 && Math.abs(y - enemyY[i]) < 90) stun[i] = 2;
   }
 
   float coinX(int i) {
@@ -59,6 +60,25 @@ final class Game {
     return stage.top[i] - (i % 3 == 1 ? 73 : 28);
   }
 
+  static final int CRAB = 0, GULL = 1, FROG = 2;
+
+  int species(int i) {
+    return index == 0 ? CRAB : index == 2 ? FROG : (index + i) % 3;
+  }
+
+  int trapIsland() {
+    return 0;
+  }
+
+  float trapX() {
+    return stage.left[trapIsland()] + stage.width[trapIsland()] * .48f;
+  }
+
+  float trapHeight() {
+    if (index == 3 || index == 4) return 5 + 26 * Math.max(0, (float) Math.sin(time * 2.4));
+    return index == 2 ? 17 : 12;
+  }
+
   void moveGuards(float dt) {
     for (int i = 0; i < enemyX.length; i++) {
       int island = stage.guards[i];
@@ -66,6 +86,11 @@ final class Game {
         stun[i] -= dt;
         continue;
       }
+      int kind = species(i);
+      float phase = time * (1.1f + index * .17f) + i;
+      enemyY[i] = stage.top[island];
+      if (kind == GULL) enemyY[i] -= 21 + 12 * Math.sin(phase * 1.7);
+      if (kind == FROG) enemyY[i] -= 34 * Math.max(0, Math.sin(phase * 2));
       float lane = stage.width[island] * .26f;
       enemyX[i] =
           stage.left[island]
@@ -119,12 +144,17 @@ final class Game {
         events |= COIN;
       }
     }
+    float ground = stage.top[trapIsland()];
+    if (shield == 0 && Math.abs(x - trapX()) < 17 && y > ground - trapHeight() && y - 32 < ground) {
+      damage();
+      return;
+    }
     if (y > 410) {
       damage();
       return;
     }
     for (int i = 0; i < enemyX.length; i++) {
-      float floor = stage.top[stage.guards[i]];
+      float floor = enemyY[i];
       if (dead[i]
           || stun[i] > 0
           || Math.abs(x - enemyX[i]) >= 18

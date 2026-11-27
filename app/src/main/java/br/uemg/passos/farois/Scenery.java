@@ -126,6 +126,53 @@ final class Scenery {
     c.restore();
   }
 
+  private void creature(Canvas c, Game g, int i) {
+    float x = g.enemyX[i], y = g.enemyY[i];
+    boolean dizzy = g.stun[i] > 0;
+    if (g.species(i) == Game.CRAB) {
+      crab(c, x, y, g.time + i, dizzy);
+      return;
+    }
+    c.save();
+    c.translate(Math.round(x), Math.round(y));
+    if (g.species(i) == Game.GULL) {
+      int plumage = dizzy ? 0xffa7b5a8 : 0xffece3cb;
+      rect(c, -8, -11, 16, 7, plumage);
+      rect(c, 4, -15, 7, 7, plumage);
+      rect(c, 10, -12, 5, 2, 0xffd39a49);
+      rect(c, 8, -14, 2, 2, INK);
+      int wing = (int) (g.time * 5) % 2 == 0 ? -16 : -8;
+      tri(c, -6, -9, -14, wing, 2, -8, 0xff717c79);
+      rect(c, -3, -4, 7, 2, 0xff927446);
+    } else {
+      int skin = dizzy ? 0xffa4b5a2 : 0xff71915b;
+      rect(c, -9, -8, 16, 7, skin);
+      rect(c, 2, -12, 9, 8, skin);
+      rect(c, 6, -13, 3, 3, CREAM);
+      rect(c, 7, -13, 1, 2, INK);
+      rect(c, -11, -4, 7, 4, 0xff566746);
+      rect(c, 5, -2, 9, 2, 0xff566746);
+    }
+    c.restore();
+  }
+
+  private void obstacle(Canvas c, Game g) {
+    float x = g.trapX(), y = g.stage.top[g.trapIsland()], h = g.trapHeight();
+    if (g.index == 3 || g.index == 4) {
+      int spray = g.index == 4 ? 0xffdd8e51 : 0xffa7d2ce;
+      rect(c, x - 12, y - 3, 24, 3, 0xff695e51);
+      rect(c, x - 5, y - h, 9, h, spray);
+      rect(c, x - 9, y - h * .68f, 4, h * .68f, spray);
+      rect(c, x + 6, y - h * .75f, 3, h * .75f, spray);
+      rect(c, x - 2, y - h - 4, 3, 2, spray);
+    } else {
+      int color = g.index == 2 ? 0xff485a40 : 0xff655545;
+      for (int j = -1; j <= 1; j++)
+        tri(c, x + j * 7 - 4, y, x + j * 7 + 1, y - h + (j == 0 ? 0 : 4), x + j * 7 + 4, y, color);
+      rect(c, x - 13, y - 2, 26, 2, 0xff917557);
+    }
+  }
+
   void world(Canvas c, Game g, float camera, boolean rainy) {
     Stage s = g.stage;
     background(c, g, camera, rainy);
@@ -154,15 +201,15 @@ final class Scenery {
         rect(c, x - 1, y - 5, 2, 9, 0xfffae3a1);
       }
     }
+    obstacle(c, g);
     int flag = s.checkpoint;
     float fx = s.left[flag] + 28, fy = s.top[flag];
     rect(c, fx, fy - 39, 3, 39, CREAM);
     tri(c, fx + 3, fy - 39, fx + 24, fy - 33, fx + 3, fy - 26, g.checkpoint ? GOLD : 0xff71cace);
     image(c, tower, 0, 0, 44, 76, s.goal - 23, s.top[s.top.length - 1] - 82, 46, 82);
-    for (int i = 0; i < g.enemyX.length; i++)
-      if (!g.dead[i]) crab(c, g.enemyX[i], s.top[s.guards[i]], g.time + i, g.stun[i] > 0);
-    if (g.echoCooldown > 2.18f) {
-      float radius = (2.6f - g.echoCooldown) * 350;
+    for (int i = 0; i < g.enemyX.length; i++) if (!g.dead[i]) creature(c, g, i);
+    if (g.echoCooldown > 1.38f) {
+      float radius = (1.8f - g.echoCooldown) * 350;
       p.setStyle(Paint.Style.STROKE);
       p.setStrokeWidth(2.5f);
       disc(c, g.x, g.y - 17, radius, 0xaaebffca);

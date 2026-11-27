@@ -24,6 +24,7 @@ public class AndroidFlowTest {
   public void open() {
     controller = Robolectric.buildActivity(MainActivity.class).setup();
     activity = controller.get();
+    activity.prefs.edit().putBoolean("prologue", true).apply();
   }
 
   @After
@@ -48,6 +49,7 @@ public class AndroidFlowTest {
     assertFalse(activity.option("som"));
     button("Voltar ao acampamento").performClick();
     button("Iniciar expedição").performClick();
+    activity.enterIsland();
     assertTrue(activity.playing());
     activity.view.game.score = 125;
     controller.pause().resume();
@@ -98,6 +100,7 @@ public class AndroidFlowTest {
     assertFalse(activity.option("mic"));
     button("Voltar ao acampamento").performClick();
     button("Iniciar expedição").performClick();
+    activity.enterIsland();
     GameView view = activity.view;
     view.layout(0, 0, 720, 405);
     android.view.MotionEvent touch =
@@ -108,10 +111,29 @@ public class AndroidFlowTest {
   }
 
   @Test
+  public void mapLocksAndFreeVisitsProtectCampaign() throws Exception {
+    activity.store.save(new Game(2, 275, 2));
+    button("Iniciar expedição").performClick();
+    assertEquals(2, activity.chart.selected);
+    draw((View) activity.chart.getParent(), 960, 540, "carta");
+    activity.chart.select(4);
+    activity.enterIsland();
+    assertNull(activity.view);
+    activity.chart.select(0);
+    activity.enterIsland();
+    assertEquals(0, activity.view.game.index);
+    activity.view.game.score = 900;
+    controller.pause().resume();
+    assertEquals(275, activity.store.load().score);
+    assertEquals(2, activity.store.load().index);
+  }
+
+  @Test
   public void renderScenes() throws Exception {
     View menu = activity.findViewById(R.id.port);
     draw(menu, 960, 540, "capa");
     button("Iniciar expedição").performClick();
+    activity.enterIsland();
     GameView v = activity.view;
     v.active(false);
     v.game.shield = 0;
@@ -134,7 +156,9 @@ public class AndroidFlowTest {
     v.layout(0, 0, w, h);
     Bitmap bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
     v.draw(new Canvas(bmp));
-    assertNotEquals(bmp.getPixel(20, 20), bmp.getPixel(w / 2, h * 3 / 4));
+    java.util.Set<Integer> colors = new java.util.HashSet<>();
+    for (int y = 5; y < h; y += 12) for (int x = 5; x < w; x += 12) colors.add(bmp.getPixel(x, y));
+    assertTrue("Cena deve conter cores do cenário e dos controles", colors.size() > 12);
     File dir = new File("build/previews");
     if (!dir.isDirectory() && !dir.mkdirs()) throw new IOException("Diretório de prévia");
     try (FileOutputStream out = new FileOutputStream(new File(dir, name + ".png"))) {

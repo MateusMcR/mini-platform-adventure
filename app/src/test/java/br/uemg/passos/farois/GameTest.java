@@ -10,12 +10,18 @@ public class GameTest {
     int score = 0, lives = 3;
     for (int level = 0; level < Stage.ALL.length; level++) {
       Game g = new Game(level, score, lives);
+      boolean crossingTrap = false;
       for (int tick = 0; tick < 16000 && g.status == Game.RUN; tick++) {
         Stage s = g.stage;
+        if (g.grounded) crossingTrap = false;
+        if (g.grounded && g.x < g.trapX() && g.trapX() - g.x < 50) {
+          g.jump();
+          crossingTrap = true;
+        }
         if (g.grounded) {
           for (int i = 0; i < s.left.length - 1; i++) {
             float distance = s.left[i] + s.width[i] - g.x;
-            if (distance >= 0 && distance < 10) {
+            if (distance >= 0 && distance < 7) {
               g.jump();
               break;
             }
@@ -23,10 +29,9 @@ public class GameTest {
         }
         for (int i = 0; i < g.enemyX.length; i++) {
           float ahead = g.enemyX[i] - g.x;
-          if (!g.dead[i] && ahead >= -5 && ahead < 96 && Math.abs(g.y - s.top[s.guards[i]]) < 85)
-            g.echo();
+          if (!g.dead[i] && ahead >= -5 && ahead < 68 && Math.abs(g.y - g.enemyY[i]) < 85) g.echo();
         }
-        g.step(1);
+        g.step(crossingTrap && g.x > g.trapX() + 32 ? 0 : 1);
       }
       assertEquals("Travessia de " + g.stage.name, Game.CLEAR, g.status);
       assertTrue(g.checkpoint);
@@ -34,6 +39,21 @@ public class GameTest {
       score = g.score;
       lives = g.lives;
     }
+  }
+
+  @Test
+  public void trapConsumesOneLifeAndBirdAndFrogLeaveGround() {
+    Game g = new Game(3, 0, 3);
+    g.shield = 0;
+    g.x = g.trapX();
+    g.step(0);
+    assertEquals(2, g.lives);
+    Game gull = new Game(1, 0, 3);
+    assertTrue(gull.enemyY[0] < gull.stage.top[gull.stage.guards[0]]);
+    Game frog = new Game(2, 0, 3);
+    frog.time = .5f;
+    frog.moveGuards(Game.DT);
+    assertTrue(frog.enemyY[0] < frog.stage.top[frog.stage.guards[0]]);
   }
 
   @Test
@@ -84,7 +104,7 @@ public class GameTest {
   public void stompDefeatsGuardAndBounces() {
     Game g = new Game(1, 0, 3);
     g.x = g.enemyX[0];
-    g.y = g.stage.top[g.stage.guards[0]] - 20;
+    g.y = g.enemyY[0] - 20;
     g.coins[g.stage.guards[0]] = true;
     g.grounded = false;
     g.velocityY = 300;

@@ -1,6 +1,6 @@
 # Mini Platform Adventure — Trilha dos Faróis
 
-Jogo de plataforma 2D para Android, desenvolvido em Java para a disciplina de Programação III da UEMG Passos. Em uma expedição por seis ilhas, o jogador precisa alcançar cada farol, saltar sobre os vãos e decidir quando usar o eco para atravessar uma patrulha.
+Jogo de plataforma 2D para Android, desenvolvido em Java para a disciplina de Programação III da UEMG Passos. Lia ouve, dentro de uma concha, o pedido de socorro do barco Aurora. A mãe dela está a bordo. Para guiar o barco de volta ao porto, é preciso abrir a rota entre seis faróis.
 
 **Discente** — Mateus Carvalho Rodrigues da Silva  
 **Docente** — Eduardo Henrique Marques Ferreira  
@@ -8,11 +8,17 @@ Jogo de plataforma 2D para Android, desenvolvido em Java para a disciplina de Pr
 
 ![Menu da versão 1.1 com a casa do faroleiro e o porto](docs/menu.png)
 
+![Carta navegável do arquipélago](docs/carta.png)
+
 ![Primeira fase com moedas, controles de toque e cenário da Enseada Verde](docs/enseada.png)
 
 ## Jogar
 
-[Baixar o APK de demonstração](https://github.com/MateusMcR/mini-platform-adventure/raw/refs/heads/main/downloads/Trilha-dos-Farois.apk). Requer Android 7.0 ou superior. Abra o aplicativo em paisagem e toque em **Iniciar expedição**. A campanha inteira funciona offline.
+[Baixar o APK de demonstração](https://github.com/MateusMcR/mini-platform-adventure/raw/refs/heads/main/downloads/Trilha-dos-Farois.apk). Requer Android 7.0 ou superior. Abra o aplicativo em paisagem e toque em **Iniciar expedição**. Na carta, toque em uma ilha e em **Entrar na fase**. Acender o farol libera a próxima rota. Você pode revisitar ilhas liberadas com três vidas de treino. A campanha inteira funciona offline.
+
+O APK de demonstração 1.2 usa instalação paralela: ele pode conviver com a versão 1.1 no mesmo celular e começa uma campanha própria. Para reproduzir essa distribuição, acrescente `-PparallelInstall` ao comando Gradle. O build normal usa o identificador original.
+
+**Trazer a campanha da 1.1 (opcional).** Instale a 1.2 e, antes da primeira abertura, conecte o celular com depuração USB ao PC. Com Python 3 e ADB no PATH, execute `python tools/importar_campanha.py`. O utilitário copia a campanha e o ranking entre os dois APKs de demonstração e confere a cópia. Se a 1.2 já tiver criado seu próprio banco, a importação é interrompida.
 
 | Ação | No celular | No teclado |
 | --- | --- | --- |
@@ -21,9 +27,22 @@ Jogo de plataforma 2D para Android, desenvolvido em Java para a disciplina de Pr
 | Emitir eco | Tocar em ECO | E |
 | Pausar | Tocar em Ⅱ | P |
 
-Você começa com **3 vidas**. Uma queda ou colisão lateral com um guarda ativo consome uma vida. A bandeira no meio da fase registra o ponto de retorno. Moedas valem **25 pontos**, derrotar um guarda saltando sobre ele vale **50**, e alcançar o farol vale **150**. Um guarda atingido pelo eco deixa o jogador passar durante dois segundos. O eco recarrega em 2,6 segundos.
+Você começa com **3 vidas**. Uma queda ou colisão lateral com um guarda ativo consome uma vida. A bandeira no meio da fase registra o ponto de retorno. Moedas valem **25 pontos**, derrotar um guarda saltando sobre ele vale **50**, e alcançar o farol vale **150**. Um guarda atingido pelo eco deixa o jogador passar durante dois segundos. O eco recarrega em 1,8 segundo.
 
 Ao sair para o acampamento, a campanha conserva fase, pontos, vidas, moedas coletadas, guardas derrotados e bandeira. Ao continuar, você volta à bandeira ativada ou ao início da fase. O ranking local mantém as dez melhores campanhas encerradas, inclusive tentativas que chegaram ao fim das vidas.
+
+## O som e os perigos do arquipélago
+
+| Ilha | Tema original em loop | O que observar |
+| --- | --- | --- |
+| Enseada Verde | Brisa do cais, 88 BPM. Melodia espaçada e ruído filtrado de vento. | Estacas na areia e caranguejos em patrulha. |
+| Falésias de Cobre | Sino de cobre, 116 BPM. Pulsos curtos e contratempos. | Gaivotas oscilam acima da plataforma. |
+| Bosque da Névoa | Raízes submersas, 74 BPM. Baixo grave e notas sustentadas em tom menor. | Espinhos e sapos que saltam entre as raízes. |
+| Salinas de Vidro | Maré de vidro, 102 BPM. Arpejos agudos com timbre de sino. | Jatos de salmoura variam de altura. |
+| Caldeira Rubra | Cinzas do canal, 140 BPM. Baixo insistente e percussão de ruído. | O respiradouro lança jatos quentes. |
+| Farol das Estrelas | Vigília de Lia, 84 BPM. Melodia ascendente sobre acordes longos. | Estacas, patrulhas mistas e a última travessia. |
+
+O eco da concha atordoa criaturas próximas. Salte sobre os obstáculos do terreno. Música e efeitos têm controles separados no caderno. A trilha pausa junto com a partida.
 
 ## As seis fases
 

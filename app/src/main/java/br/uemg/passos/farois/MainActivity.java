@@ -22,6 +22,12 @@ public final class MainActivity extends Activity {
   private LinearLayout panel;
   private boolean fieldKit, foreground;
   private AlertDialog overlay;
+  SeaChart chart;
+  private boolean replay;
+  private MediaPlayer music;
+  private static final int[] THEMES = {
+    R.raw.ilha0, R.raw.ilha1, R.raw.ilha2, R.raw.ilha3, R.raw.ilha4, R.raw.ilha5
+  };
   private SoundPool sounds;
   private final android.util.SparseIntArray clips = new android.util.SparseIntArray();
 
@@ -43,6 +49,7 @@ public final class MainActivity extends Activity {
     int[] files = {R.raw.moeda, R.raw.pulo, R.raw.eco, R.raw.queda, R.raw.farol, R.raw.guarda};
     for (int i = 0; i < events.length; i++) clips.put(events[i], sounds.load(this, files[i], 1));
     if (state != null && state.getBoolean("kit")) kit();
+    else if (state != null && state.containsKey("island")) openChart(state.getInt("island"));
     else camp();
   }
 
@@ -68,6 +75,7 @@ public final class MainActivity extends Activity {
   protected void onSaveInstanceState(Bundle b) {
     super.onSaveInstanceState(b);
     b.putBoolean("kit", fieldKit);
+    if (chart != null) b.putInt("island", chart.selected);
   }
 
   boolean allowed(String permission) {
@@ -75,7 +83,7 @@ public final class MainActivity extends Activity {
   }
 
   boolean option(String key) {
-    return prefs.getBoolean(key, key.equals("som"));
+    return prefs.getBoolean(key, key.equals("som") || key.equals("music"));
   }
 
   boolean rain() {
@@ -102,6 +110,8 @@ public final class MainActivity extends Activity {
   }
 
   private void screen(boolean tools) {
+    chart = null;
+    releaseMusic();
     if (view != null) view.active(false);
     gear.stopPlay();
     if (!tools) gear.stopGps();
@@ -194,12 +204,10 @@ public final class MainActivity extends Activity {
           14,
           Scenery.GOLD,
           false);
-    button(
-        save == null ? "Iniciar expedição" : "Continuar expedição",
-        true,
-        () -> start(save == null ? new Game(0, 0, 3) : save));
+    button(save == null ? "Iniciar expedição" : "Continuar expedição", true, this::embark);
     button("Caderno de campo", false, this::kit);
     button("Como jogar", false, this::help);
+    button("Diário de Lia", false, () -> message("A concha do Aurora", Voyage.PROLOGUE));
     button("Ranking local", false, () -> message("Ranking da expedição", store.ranking()));
     if (save != null)
       button(
@@ -210,7 +218,12 @@ public final class MainActivity extends Activity {
                   .setTitle("Recomeçar na primeira ilha?")
                   .setMessage("A campanha salva será substituída. O ranking será preservado.")
                   .setNegativeButton("Voltar", null)
-                  .setPositiveButton("Recomeçar", (d, w) -> start(new Game(0, 0, 3)))
+                  .setPositiveButton(
+                      "Recomeçar",
+                      (d, w) -> {
+                        store.save(new Game(0, 0, 3));
+                        openChart(0);
+                      })
                   .show());
   }
 
@@ -263,6 +276,7 @@ public final class MainActivity extends Activity {
           if (option("mic") || allowed(Manifest.permission.RECORD_AUDIO)) toggle("mic");
           else requestPermissions(new String[] {Manifest.permission.RECORD_AUDIO}, MIC);
         });
+    button("Trilha das ilhas · " + onOff("music"), false, () -> toggle("music"));
     button("Efeitos sonoros · " + onOff("som"), false, () -> toggle("som"));
     button("Voltar ao acampamento", true, this::camp);
   }
@@ -317,7 +331,7 @@ public final class MainActivity extends Activity {
         "Como jogar",
         "Segure ◀ ou ▶ e toque em PULO com outro dedo para atravessar os vãos. Aterrisse sobre"
             + " guardas para derrotá-los. ECO atordoa os guardas próximos por 2 segundos e"
-            + " recarrega em 2,6 segundos.\n\n"
+            + " recarrega em 1,8 segundo.\n\n"
             + "Moeda: 25 pts. Guarda: 50 pts. Farol: 150 pts. Você começa com 3 vidas. A bandeira"
             + " marca o retorno após uma queda. Chegue ao farol para avançar.\n\n"
             + "No caderno, ative o giroscópio para pular com um giro breve no plano da tela ou o"
@@ -334,10 +348,119 @@ public final class MainActivity extends Activity {
         .show();
   }
 
+  private void embark() {
+    Game save = store.load();
+    if (save == null) {
+      save = new Game(0, 0, 3);
+      store.save(save);
+    }
+    openChart(save.index);
+    if (!prefs.getBoolean("prologue", false)) {
+      prefs.edit().putBoolean("prologue", true).apply();
+      message("A concha do Aurora", Voyage.PROLOGUE);
+    }
+  }
+
+  private int unlocked(Game save) {
+    return Math.max(
+        store.historicalIsland(),
+        Math.max(save == null ? 0 : save.index, prefs.getInt("openIsland", 0)));
+  }
+
+  private void openChart(int selected) {
+    screen(false);
+    Game save = store.load();
+    int open = unlocked(save);
+    LinearLayout layout = new LinearLayout(this);
+    layout.setBackgroundColor(0xfff0e5ca);
+    chart = new SeaChart(this, open, Math.max(0, Math.min(5, selected)));
+    layout.addView(chart, new LinearLayout.LayoutParams(0, -1, 1.8f));
+    ScrollView sheet = new ScrollView(this);
+    sheet.setFillViewport(true);
+    panel = new LinearLayout(this);
+    panel.setId(R.id.actions);
+    panel.setOrientation(LinearLayout.VERTICAL);
+    panel.setGravity(Gravity.CENTER_VERTICAL);
+    panel.setPadding(dp(12), dp(8), dp(12), dp(8));
+    sheet.addView(panel);
+    layout.addView(sheet, new LinearLayout.LayoutParams(0, -1, 1));
+    setContentView(layout);
+    chartInfo();
+    chart.requestFocus();
+  }
+
+  void chartInfo() {
+    panel.removeAllViews();
+    Game save = store.load();
+    int n = chart.selected, open = unlocked(save);
+    text("Carta do arquipélago", 19, Scenery.INK, true);
+    text((n + 1) + " / 6   " + Stage.ALL[n].name, 16, Scenery.GOLD, false);
+    if (n <= open) {
+      text(Voyage.CHAPTER[n], 14, Scenery.INK, false);
+      boolean current = save != null && n == save.index;
+      button(current ? "Entrar na fase" : "Revisitar ilha", true, this::enterIsland);
+      if (!current) text("Visita livre · 3 vidas", 12, Scenery.GOLD, false);
+    } else
+      text(
+          "Acenda o farol de " + Stage.ALL[n - 1].name + " para liberar a rota.",
+          14,
+          Scenery.INK,
+          false);
+    LinearLayout nav = new LinearLayout(this);
+    for (int d : new int[] {-1, 1}) {
+      Button b = new Button(this);
+      b.setText(d < 0 ? "◀" : "▶");
+      b.setContentDescription(d < 0 ? "Ilha anterior" : "Ilha seguinte");
+      b.setEnabled(n + d >= 0 && n + d < 6);
+      b.setOnClickListener(v -> chart.select(n + d));
+      nav.addView(b, new LinearLayout.LayoutParams(0, dp(48), 1));
+    }
+    panel.addView(nav);
+    button("Acampamento", false, this::camp);
+  }
+
+  void enterIsland() {
+    if (chart == null) return;
+    int n = chart.selected;
+    Game save = store.load();
+    if (n > unlocked(save)) return;
+    replay = save == null || n != save.index;
+    start(replay ? new Game(n, 0, 3) : save);
+  }
+
+  void saveCampaign(Game g) {
+    if (!replay) store.save(g);
+  }
+
+  private void releaseMusic() {
+    if (music != null) {
+      music.release();
+      music = null;
+    }
+  }
+
+  private void pauseMusic() {
+    if (music != null && music.isPlaying()) music.pause();
+  }
+
+  private void playMusic() {
+    if (!option("music")) return;
+    if (music == null) {
+      music = MediaPlayer.create(this, THEMES[view.game.index]);
+      if (music != null) {
+        music.setVolume(.37f, .37f);
+        music.setLooping(true);
+      }
+    }
+    if (music != null) music.start();
+  }
+
   private void start(Game game) {
+    chart = null;
+    releaseMusic();
     fieldKit = false;
     gear.stopGps();
-    store.save(game);
+    saveCampaign(game);
     view = new GameView(this, game);
     setContentView(view);
     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -349,20 +472,23 @@ public final class MainActivity extends Activity {
       view.active(true);
       view.requestFocus();
       gear.startPlay();
+      playMusic();
     }
   }
 
   void pauseGame() {
     if (view == null || view.game.status != Game.RUN || overlay != null) return;
     view.active(false);
+    pauseMusic();
     gear.stopPlay();
-    store.save(view.game);
+    saveCampaign(view.game);
     overlay =
         new AlertDialog.Builder(this)
             .setTitle("Expedição pausada")
             .setMessage(
-                "Ao voltar ao acampamento, você retoma a fase na última bandeira ou no início da"
-                    + " ilha inicial.")
+                replay
+                    ? "Ao voltar à carta, você encerra a visita livre."
+                    : "Ao voltar à carta, você poderá retomar a fase na bandeira ou no início.")
             .setCancelable(false)
             .setPositiveButton(
                 "Continuar",
@@ -371,10 +497,10 @@ public final class MainActivity extends Activity {
                   resumePlay();
                 })
             .setNegativeButton(
-                "Acampamento",
+                "Carta das ilhas",
                 (d, w) -> {
                   overlay = null;
-                  camp();
+                  openChart(view.game.index);
                 })
             .show();
   }
@@ -382,15 +508,34 @@ public final class MainActivity extends Activity {
   void result(GameView source) {
     if (source != view || overlay != null || isFinishing() || isDestroyed()) return;
     gear.stopPlay();
+    releaseMusic();
     Game g = view.game;
+    if (replay) {
+      overlay =
+          new AlertDialog.Builder(this)
+              .setTitle(g.status == Game.CLEAR ? "Ilha revisitada" : "Fim da visita")
+              .setMessage(g.score + " pontos nesta visita.")
+              .setCancelable(false)
+              .setPositiveButton(
+                  "Voltar à carta",
+                  (d, w) -> {
+                    overlay = null;
+                    openChart(g.index);
+                  })
+              .show();
+      return;
+    }
     boolean clear = g.status == Game.CLEAR, more = clear && g.index + 1 < Stage.ALL.length;
     Game next = more ? new Game(g.index + 1, g.score, g.lives) : null;
+    if (clear)
+      prefs.edit().putInt("openIsland", Math.max(unlocked(g), Math.min(5, g.index + 1))).apply();
     if (more) store.save(next);
     else store.finish(g);
     String title =
         more ? "Farol aceso!" : clear ? "Os seis faróis estão acesos!" : "Fim da expedição";
     String body =
-        g.stage.name
+        (clear && !more ? Voyage.END + "\n\n" : "")
+            + g.stage.name
             + "   •   "
             + g.score
             + " pontos"
@@ -401,10 +546,10 @@ public final class MainActivity extends Activity {
         new AlertDialog.Builder(this).setTitle(title).setMessage(body).setCancelable(false);
     if (more)
       b.setPositiveButton(
-          "Próxima fase",
+          "Ver rota na carta",
           (d, w) -> {
             overlay = null;
-            start(next);
+            openChart(next.index);
           });
     b.setNegativeButton(
         "Acampamento",
@@ -418,16 +563,17 @@ public final class MainActivity extends Activity {
   @Override
   public void onBackPressed() {
     if (view != null) pauseGame();
-    else if (fieldKit) camp();
+    else if (fieldKit || chart != null) camp();
     else super.onBackPressed();
   }
 
   @Override
   protected void onPause() {
     foreground = false;
+    pauseMusic();
     if (view != null) {
       view.active(false);
-      if (view.game.status == Game.RUN) store.save(view.game);
+      if (view.game.status == Game.RUN) saveCampaign(view.game);
     }
     gear.stopPlay();
     gear.stopGps();
@@ -445,6 +591,7 @@ public final class MainActivity extends Activity {
   protected void onDestroy() {
     gear.stopPlay();
     gear.stopGps();
+    releaseMusic();
     if (sounds != null) sounds.release();
     store.close();
     super.onDestroy();

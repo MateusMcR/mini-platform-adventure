@@ -75,6 +75,12 @@ final class FieldStore extends SQLiteOpenHelper {
     }
   }
 
+  int historicalIsland() {
+    try (Cursor c = getReadableDatabase().rawQuery("SELECT MAX(stage) FROM ranking", null)) {
+      return c.moveToFirst() ? Math.max(0, Math.min(5, c.getInt(0) - 1)) : 0;
+    }
+  }
+
   String ranking() {
     StringBuilder b = new StringBuilder();
     try (Cursor c =

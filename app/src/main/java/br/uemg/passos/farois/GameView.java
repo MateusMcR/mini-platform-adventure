@@ -61,7 +61,7 @@ final class GameView extends View {
     if (game.events != 0) {
       if ((game.events & Game.FLAG) != 0) {
         flagTime = game.time + 2;
-        host.store.save(game);
+        host.saveCampaign(game);
       }
       host.sound(game.events);
       game.events = 0;

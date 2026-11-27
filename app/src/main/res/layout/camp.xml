@@ -1,0 +1,10 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="horizontal" android:background="#142D36">
+    <br.uemg.passos.farois.CoverView android:layout_width="0dp" android:layout_height="match_parent"
+        android:layout_weight="1.15" android:contentDescription="Trilha dos Faróis. Uma aventura em seis ilhas."/>
+    <ScrollView android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:fillViewport="true">
+        <LinearLayout android:id="@+id/actions" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:gravity="center_vertical" android:padding="18dp"/>
+    </ScrollView>
+</LinearLayout>

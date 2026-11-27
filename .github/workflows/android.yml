@@ -20,3 +20,29 @@ jobs:
         with:
           name: Trilha-dos-Farois-Android
           path: app/build/outputs/apk/debug/app-debug.apk
+      - name: Relatório de testes
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resultados
+          path: app/build/test-results/
+  publicar:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: verificar
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: Trilha-dos-Farois-Android
+          path: pacote
+      - name: Publicar o APK verificado
+        run: |
+          cp pacote/app-debug.apk downloads/Trilha-dos-Farois.apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add downloads/Trilha-dos-Farois.apk
+          git diff --cached --quiet || git commit -m "Publica o APK validado da aventura"
+          git push origin HEAD:main

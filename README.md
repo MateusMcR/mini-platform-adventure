@@ -16,9 +16,7 @@ Jogo de plataforma 2D para Android, desenvolvido em Java para a disciplina de Pr
 
 [Baixar o APK de demonstração](https://github.com/MateusMcR/mini-platform-adventure/raw/refs/heads/main/downloads/Trilha-dos-Farois.apk). Requer Android 7.0 ou superior. Abra o aplicativo em paisagem e toque em **Iniciar expedição**. Na carta, toque em uma ilha e em **Entrar na fase**. Acender o farol libera a próxima rota. Você pode revisitar ilhas liberadas com três vidas de treino. A campanha inteira funciona offline.
 
-O APK de demonstração 1.2 usa instalação paralela: ele pode conviver com a versão 1.1 no mesmo celular e começa uma campanha própria. Para reproduzir essa distribuição, acrescente `-PparallelInstall` ao comando Gradle. O build normal usa o identificador original.
-
-**Trazer a campanha da 1.1 (opcional).** Instale a 1.2 e, antes da primeira abertura, conecte o celular com depuração USB ao PC. Com Python 3 e ADB no PATH, execute `python tools/importar_campanha.py`. O utilitário copia a campanha e o ranking entre os dois APKs de demonstração e confere a cópia. Se a 1.2 já tiver criado seu próprio banco, a importação é interrompida.
+O APK 1.3 usa instalação paralela e pode conviver com as versões anteriores. A campanha desta instalação começa separada.
 
 | Ação | No celular | No teclado |
 | --- | --- | --- |
@@ -43,6 +41,12 @@ Ao sair para o acampamento, a campanha conserva fase, pontos, vidas, moedas cole
 | Farol das Estrelas | Vigília de Lia, 84 BPM. Melodia ascendente sobre acordes longos. | Estacas, patrulhas mistas e a última travessia. |
 
 O eco da concha atordoa criaturas próximas. Salte sobre os obstáculos do terreno. Música e efeitos têm controles separados no caderno. A trilha pausa junto com a partida.
+
+## A maré profunda (versão 1.3)
+
+A abertura tem três planos animados: toque para avançar ou use **Pular**. O diário permite rever a introdução. Todas as fases ganharam uma enseada e um bosque depois do percurso original. Na água, cada toque em **NADAR** dá uma braçada; solte para afundar. Ao lado do tronco, **SUBIR** leva à copa, onde há uma moeda. Caminhe para fora do galho para descer.
+
+O sexto farol encerra a campanha com o retorno do Aurora e os créditos. Na carta surge a sétima ilha opcional, **Santuário da Ressaca**. Na arena, pule a onda da sentinela e use **ECO** perto da pérola dourada. Três acertos em aberturas diferentes liberam o farol do santuário. A visita usa vidas próprias.
 
 ## As seis fases
 

@@ -4,18 +4,33 @@ package br.uemg.passos.farois;
 final class Stage {
   final String name, hint;
   final int[] left, width, top, guards;
-  final int checkpoint, goal;
+  static final int BONUS = 6;
+  final int checkpoint, goal, channel, grove;
+  int waterStart(){ return left[channel]+width[channel]; }
+  int waterEnd(){ return left[grove]; }
+  int trunk(){ return left[grove]+width[grove]/2; }
+  int canopy(){ return top[grove]-106; }
 
   Stage(String name, String hint, int[] width, int[] top, int[] gaps, int... guards) {
     this.name = name;
     this.hint = hint;
-    this.width = width;
-    this.top = top;
-    this.guards = guards;
-    left = new int[width.length];
-    for (int i = 1; i < left.length; i++) left[i] = left[i - 1] + width[i - 1] + gaps[i - 1];
-    checkpoint = left.length / 2;
-    goal = left[left.length - 1] + width[width.length - 1] - 64;
+    // A extensão fica depois do mapa antigo: bandeiras e máscaras dos saves continuam válidas.
+    int count=width.length;
+    channel=count-1;
+    grove=count;
+    this.width=java.util.Arrays.copyOf(width,count+2);
+    this.top=java.util.Arrays.copyOf(top,count+2);
+    this.width[grove]=234;
+    this.width[grove+1]=name.equals("Santuário da Ressaca")?560:270;
+    this.top[grove]=300;
+    this.top[grove+1]=246;
+    this.guards=guards;
+    left=new int[count+2];
+    for(int i=1;i<count;i++)left[i]=left[i-1]+width[i-1]+gaps[i-1];
+    left[grove]=waterStart()+242+(count%3)*24;
+    left[grove+1]=left[grove]+this.width[grove]+50;
+    checkpoint=count/2;
+    goal=left[grove+1]+this.width[grove+1]-58;
   }
 
   static final Stage[] ALL = {
@@ -75,6 +90,8 @@ final class Stage {
         4,
         6,
         8,
-        9)
+        9),
+    new Stage("Santuário da Ressaca","Na arena, salte a onda. Use ECO quando a pérola brilhar.",
+        new int[]{265,180,205,250},new int[]{300,278,300,285},new int[]{55,70,65},1,2)
   };
 }

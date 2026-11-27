@@ -13,7 +13,19 @@ final class Game {
   final boolean[] dead, coins;
   float x, y, velocityY, time, grace, jumpBuffer, shield, echoCooldown;
   int score, lives, status, events, facing = 1;
-  boolean grounded, checkpoint;
+  boolean grounded, checkpoint, climbing;
+  int bossLife=3;
+  float bossTime;
+  boolean struck;
+  boolean swimming(){return x>stage.waterStart()-7 && x<stage.waterEnd()+7 && y>=300;}
+  boolean atTree(){return Math.abs(x-stage.trunk())<23 && y>=stage.canopy()-1 && y<=stage.top[stage.grove]+2;}
+  int arena(){return stage.left[stage.grove+1];}
+  float bossX(){return arena()+395;}
+  boolean fighting(){return index==Stage.BONUS && bossLife>0 && x>=arena();}
+  float cycle(){return bossTime%4.5f;}
+  boolean vulnerable(){return cycle()>2.3f && cycle()<4.1f;}
+  float waveX(){return bossX()-(cycle()-1.0f)*(190+(3-bossLife)*32);}
+
 
   Game(int index, int score, int lives) {
     this.index = index;
@@ -34,6 +46,7 @@ final class Game {
     int island = checkpoint ? stage.checkpoint : 0;
     x = stage.left[island] + 28;
     y = stage.top[island];
+    climbing=false;
     velocityY = jumpBuffer = 0;
     grounded = true;
     grace = .09f;
@@ -41,13 +54,19 @@ final class Game {
   }
 
   void jump() {
-    if (status == RUN) jumpBuffer = .12f;
+    if(status!=RUN)return;
+    if(swimming()){velocityY=-360;grounded=false;events|=LEAP;return;}
+    if(atTree() && y>stage.canopy()+2){climbing=true;grounded=false;return;}
+    jumpBuffer=.12f;
   }
 
   void echo() {
     if (status != RUN || echoCooldown > 0) return;
     echoCooldown = 1.8f;
     events |= ECHO;
+    if(fighting() && vulnerable() && !struck && Math.abs(x-bossX())<145){
+      bossLife--;struck=true;score+=100;
+    }
     for (int i = 0; i < enemyX.length; i++)
       if (Math.abs(x - enemyX[i]) <= 150 && Math.abs(y - enemyY[i]) < 90) stun[i] = 2;
   }
@@ -57,6 +76,7 @@ final class Game {
   }
 
   float coinY(int i) {
+    if(i==stage.grove)return stage.canopy()-20;
     return stage.top[i] - (i % 3 == 1 ? 73 : 28);
   }
 
@@ -124,7 +144,18 @@ final class Game {
     jumpBuffer -= DT;
     float oldY = y;
     x = Math.max(10, Math.min(stage.goal + 8, x + direction * SPEED * DT));
-    velocityY += GRAVITY * DT;
+    if(climbing){
+      if(Math.abs(x-stage.trunk())>24)climbing=false;
+      else{
+        y=Math.max(stage.canopy(),y-105*DT);
+        velocityY=0;
+        if(y<=stage.canopy()){climbing=false;grounded=true;grace=.09f;}
+        return;
+      }
+    }
+    boolean water=swimming();
+    velocityY += (water?420:GRAVITY) * DT;
+    if(water)velocityY=Math.min(velocityY,65);
     y += velocityY * DT;
     grounded = false;
     for (int i = 0; i < stage.left.length; i++) {
@@ -142,6 +173,21 @@ final class Game {
         coins[i] = true;
         score += 25;
         events |= COIN;
+      }
+    }
+    if(swimming() && y>371){y=371;velocityY=0;}
+    // As margens são sólidas por baixo da linha d'água. Uma braçada permite sair.
+    if(y>stage.top[stage.grove]+3 && x>=stage.waterEnd()-8 && x<stage.waterEnd()+10)x=stage.waterEnd()-8;
+    if(y>stage.top[stage.channel]+3 && x<=stage.waterStart()+8 && x>stage.waterStart()-10)x=stage.waterStart()+8;
+    if(Math.abs(x-stage.trunk())<=60 && velocityY>=0 && oldY<=stage.canopy()+.01f && y>=stage.canopy()){
+      y=stage.canopy();velocityY=0;grounded=true;
+    }
+    if(fighting()){
+      float previous=cycle();bossTime+=DT;
+      if(cycle()<previous)struck=false;
+      boolean wave=cycle()>=1 && cycle()<3.3f && Math.abs(x-waveX())<14;
+      if(shield==0 && ((wave && y>stage.top[stage.grove+1]-20) || Math.abs(x-bossX())<31)){
+        damage();return;
       }
     }
     float ground = stage.top[trapIsland()];
@@ -170,7 +216,7 @@ final class Game {
         return;
       }
     }
-    if (x >= stage.goal && grounded) {
+    if (x >= stage.goal && grounded && (index!=Stage.BONUS || bossLife==0)) {
       score += 150;
       status = CLEAR;
     }
